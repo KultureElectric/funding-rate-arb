@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-import { getMarketByBaseSymbolAndKind } from "@blockworks-foundation/mango-client";
+import { getMarketByBaseSymbolAndKind, MangoCache } from "@blockworks-foundation/mango-client";
 import {
   MarginfiAccount,
   MarginfiClient,
@@ -94,10 +94,15 @@ async function trade(mfiAccount: MarginfiAccount) {
     mangoMarketConfig.quoteDecimals
   );
 
+  
+
   // Get Zo market information.
   const zoState = await mfiAccount.zo.getZoState();
   const zoMargin = await mfiAccount.zo.getZoMargin(zoState);
   const zoMarket = await zoState.getMarketBySymbol(ZO_MARKET);
+
+  // console.log(mfiAccount.zo.settleFunds());
+  
 
   const mangoFundingRate = new Decimal(
     mangoMarket.getCurrentFundingRate(
@@ -147,8 +152,8 @@ async function trade(mfiAccount: MarginfiAccount) {
     mangoDirection = zoPositive ? MangoOrderSide.Bid : MangoOrderSide.Ask;
   }
 
-  let mangoPrice;
-  let zoPrice;
+  let mangoPrice: number;
+  let zoPrice: number;
 
   const mangoAskPrice = (await mangoMarket.loadAsks(connection)).getL2(1)[0][0];
   const mangoBidPrice = (await mangoMarket.loadBids(connection)).getL2(1)[0][0];
@@ -185,6 +190,8 @@ async function trade(mfiAccount: MarginfiAccount) {
       mangoMarket
     );
   const currentZoPositionInfo = zoMargin.position(ZO_MARKET);
+  console.log(currentZoPositionInfo.coins);
+  
   const currentZoPosition = currentZoPositionInfo.isLong
     ? currentZoPositionInfo.coins.decimal
     : currentZoPositionInfo.coins.decimal.neg();
@@ -195,6 +202,37 @@ async function trade(mfiAccount: MarginfiAccount) {
     currentMangoPosition,
     currentZoPosition
   );
+
+  // Check Mango Health, Leverage etc.
+
+  const mangoCache: MangoCache = await mangoGroup.loadCache(connection);  
+  const oracleIndex = mangoGroup.getOracleIndex(new PublicKey('J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix')); // TODO: query Oracle Index
+
+  const mangoLeverage = mangoAccount.getLeverage(mangoGroup, mangoCache);
+  const mangoLiquidationPrice = mangoAccount.getLiquidationPrice(mangoGroup, mangoCache, oracleIndex)
+
+  console.log(
+    "Mango - Leverage: %s, Liquidation price: %s",
+    mangoLeverage,
+    mangoLiquidationPrice
+  ); 
+
+  // TODO: 01 Health, Leverage Etc
+
+  const zoTotalOpenPositionsValue = zoMargin.totalOpenPositionNotional.toNumber();
+  const zoEquity = zoMargin.weightedAccountValue.toNumber();
+
+  console.log(zoMargin.initialMarginInfo());
+  console.log(zoMargin.maintenanceMarginFraction);
+
+  const zoLeverage = zoTotalOpenPositionsValue / zoEquity;
+  const zoLiquidationPrice = 1;
+
+  console.log(
+    "01 - Leverage: %s, Liquidation price: %s",
+    zoLeverage,
+    zoLiquidationPrice
+  ); 
 
   const mangoDelta = (
     mangoDirection === MangoOrderSide.Bid

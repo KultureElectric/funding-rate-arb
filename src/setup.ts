@@ -1,9 +1,9 @@
 require("dotenv").config();
 
 import {
-  getClientFromEnv,
   MarginfiAccount,
   uiToNative,
+  MarginfiClient
 } from "@mrgnlabs/marginfi-client";
 import { POSITION_SIZE_USD } from "./bot";
 
@@ -15,8 +15,8 @@ import { POSITION_SIZE_USD } from "./bot";
   console.log("Setting up funding rate arb bot for SOL");
 
   // Get marginfi account from .env config.
-  const mfiClient = await getClientFromEnv();
-  const mfiAccount = await tryOrCry(mfiClient.createMarginfiAccount(), "Creating marginfi account");
+  const mfiClient: MarginfiClient = await MarginfiClient.fromEnv();
+  const mfiAccount: MarginfiAccount = await tryOrCry(mfiClient.createMarginfiAccount(), "Creating marginfi account");
 
   console.log("Account address %s", mfiAccount.publicKey);
   
