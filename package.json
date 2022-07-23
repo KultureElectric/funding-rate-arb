@@ -1,13 +1,14 @@
 {
   "name": "funding-rate-arb",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": "https://github.com/mrgnlabs/funding-rate-arb.git",
   "author": "Jakob Povšič <jakob.povsic@gmail.com>",
   "license": "MIT",
   "scripts": {
     "setup": "ts-node src/setup.ts",
-    "start": "ts-node src/run.ts"
+    "start": "ts-node src/run.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@blockworks-foundation/mango-client": "^3.6.5",
@@ -17,5 +18,8 @@
     "dotenv": "^16.0.1",
     "ts-node": "^10.8.1",
     "typescript": "^4.7.4"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.0"
   }
 }
